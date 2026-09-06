@@ -1,20 +1,17 @@
 import jwt from 'jsonwebtoken'
 const { verify } = jwt
+import { ApiError } from './ApiError.js'
 
 const auth = (req, _res, next) => {
   const [scheme, token] = req.get('authorization')?.split(' ') || []
   if (scheme !== 'Bearer' || !token) {
-    const error = new Error('Authentication required')
-    error.status = 401
-    return next(error)
+    return next(new ApiError('Authentication required', 401))
   }
   try {
     req.user = verify(token, process.env.JWT_SECRET_KEY)
     return next()
   } catch {
-    const error = new Error('Invalid or expired token')
-    error.status = 401
-    return next(error)
+    return next(new ApiError('Invalid or expired token', 401))
   }
 }
 

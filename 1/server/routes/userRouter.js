@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { compare, hash } from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { pool } from '../helper/db.js'
+import { ApiError } from '../helper/ApiError.js'
 
 const { sign } = jwt
 const router = Router()
@@ -11,9 +12,7 @@ router.post('/signup', async (req, res, next) => {
     const email = req.body.user?.email?.trim().toLowerCase()
     const password = req.body.user?.password
     if (!email || !password) {
-      const error = new Error('Email and password are required')
-      error.status = 400
-      return next(error)
+        return next(new ApiError('Email and password are required', 400))
     }
     const hashedPassword = await hash(password, 10)
     const result = await pool.query(
@@ -31,9 +30,7 @@ router.post('/signin', async (req, res, next) => {
     const email = req.body.user?.email?.trim().toLowerCase()
     const password = req.body.user?.password
     if (!email || !password) {
-      const error = new Error('Email and password are required')
-      error.status = 400
-      return next(error)
+        return next(new ApiError('Email and password are required', 400))
     }
     const result = await pool.query(
       'SELECT id, email, password FROM account WHERE email = $1',
@@ -41,9 +38,7 @@ router.post('/signin', async (req, res, next) => {
     )
     const dbUser = result.rows[0]
     if (!dbUser || !(await compare(password, dbUser.password))) {
-      const error = new Error('Invalid email or password')
-      error.status = 401
-      return next(error)
+        return next(new ApiError('Invalid email or password', 401))
     }
     const token = sign(
       { userId: dbUser.id, email: dbUser.email },
